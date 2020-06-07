@@ -1,5 +1,7 @@
 
 
+
+
 class TimerDashboard extends React.Component{
 
   constructor(props){
@@ -16,15 +18,7 @@ class TimerDashboard extends React.Component{
   createTimer = (timer) => {
     const t = helpers.newTimer(timer);
 
-    fetch(
-      '/api/timers',
-      {method:'POST',
-      headers: {'Content-Type': 'application/json'},
-      body:JSON.stringify(t)}).then(res => res.json()).then(data =>{
-        console.log("Success Creating:",data)
-      }).catch((error)=>{
-        console.error('Error:',error)
-      })
+    client.createTimer(t)
 
     this.setState({
       timers:this.state.timers.concat(t)
@@ -46,16 +40,10 @@ class TimerDashboard extends React.Component{
         return timers
       }
     })
-    helpers.findById(updated_timers,timer.id,(ele)=>{
-        fetch('/api/timers',
-        {method:'PUT',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(ele)}).then(res=>res.json()).then(data=>{
-          console.log("Succes Updating:",data)
 
-        }).catch((error)=>{
-          console.error("Error:",error)
-        })
+    helpers.findById(updated_timers,timer.id,(ele)=>{
+       
+      client.updateTimer(ele)
 
     })
 
@@ -63,18 +51,6 @@ class TimerDashboard extends React.Component{
   }
 
 
-
-  getTimers(){
-    fetch('/api/timers',{method:'GET'}).then(response => response.json()).
-    then((res)=>{
-      let timers_ = res.map(element => {
-      
-        return element
-      });
-    
-      this.setState({timers:timers_})
-    }) 
-  }
   handleDeleteTimer = (timerId) =>{
 
     this.removeTimerFromServer(timerId)
@@ -88,17 +64,9 @@ class TimerDashboard extends React.Component{
       }
     })
     helpers.findById(this.state.timers,timerId,(ele)=>{
-      fetch('/api/timers',
-      {method:'DELETE',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(ele)}).then(res=>res.json()).then(data=>{
-        console.log("Succes Deleting:",data)
+        client.deleteTimer(ele)  
 
-      }).catch((error)=>{
-        console.error("Error:",error)
-      })
-
-  })
+     })
     this.setState({timers:newTimers})
   }
   
@@ -121,6 +89,13 @@ class TimerDashboard extends React.Component{
         return ele
       }
     })})
+
+    helpers.findById(this.state.timers,timerId,(ele)=>{
+
+      const data = {id:ele.id,stop:now}
+      client.stopTimer(data)
+
+    })
   }
 
 
@@ -137,6 +112,12 @@ class TimerDashboard extends React.Component{
     })
     }
     )
+    helpers.findById(this.state.timers,timerId,(ele)=>{
+      const data = {id:ele.id,start:now}
+      client.startTimer(data)
+
+
+  })
   }
 
 
@@ -144,7 +125,10 @@ class TimerDashboard extends React.Component{
 
 
   componentDidMount(){
-    this.getTimers()
+    client.getTimers((Servertimers)=>{
+
+      this.setState({timers:Servertimers})
+    })
   }
 
   render(){
